@@ -1,6 +1,9 @@
 {
+    "_comment": "Read the README.md file to know where to get the data."
     "DISCORD_TOKEN": "YOUR_DISCORD_TOKEN",
     "CHARACTER_TOKEN": "YOUR_CHARACTER_TOKEN",
     "CHARACTER_ID": "YOUR_CHARACTER_ID",
     "STATIC_CHAT_ID": "YOUR_STATIC_CHAT_ID"
+    "CHARACTER_NAME": "CHARACTER_NAME"
 }
+
