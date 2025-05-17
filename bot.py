@@ -1,9 +1,12 @@
 import os
 import io
 import sys
+import time
 import json
+import signal
 import asyncio
 import discord
+import platform
 from discord.ext import commands
 from discord.ui import Button, View
 from PyCharacterAI import get_client
@@ -21,13 +24,11 @@ def load_config():
     
 # Configuration
 config = load_config()
-
 DISCORD_TOKEN = config["DISCORD_TOKEN"]
 CHARACTER_TOKEN = config["CHARACTER_TOKEN"]
 CHARACTER_ID = config["CHARACTER_ID"]
 STATIC_CHAT_ID = config["STATIC_CHAT_ID"]
 CHARACTER_NAME = config["CHARACTER_NAME"]
-
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -37,7 +38,50 @@ client = None
 chat = None
 me = None
 selected_voice_id = None  # Global variable for the selected voice ID
+ 
+red = '\033[91m'  # Red color for the message
+grey = '\033[90m'  # Grey color for the time
+blue = '\033[34m'  # Blue color for the message
+purple = '\033[38;5;129m'  # Purple color for the message
+reset = '\033[0m'  # Reset color to default
+light_blue = '\033[94m'  # Light blue color for the time
+light_green = '\033[92m'  # Light green color for the message
+light_pink = '\033[95m'  # Light pink (magenta) color for the message
+dark_red = '\033[38;5;52m'  # Dark red color for the message
+bright_red = '\033[91m'  # Bright red color for the message
 
+timeout = 5
+
+class TimeoutException(Exception):
+    pass
+  
+# Function to handle the timeout signal
+def timeout_handler(signum, frame):
+    raise TimeoutException("Time is up!")
+    
+# Set the timeout handler
+signal.signal(signal.SIGALRM, timeout_handler)
+
+
+def get_input_with_timeout(prompt, timeout):
+    # Set the alarm for timeout
+    signal.alarm(timeout)
+    
+    try:
+        user_input = input(prompt)
+        signal.alarm(0)  # Cancel the alarm if input is received
+        return user_input
+    except TimeoutException:
+        return None  # Timeout occurred
+  
+def clear_screen():
+    # Pause to allow user to see previous output
+    time.sleep(0.5)
+    # Check OS and clear screen accordingly
+    if platform.system() == "Windows":
+        os.system('cls')
+    else:
+        os.system('clear')
 
 async def find_voice_id(CHARACTER_NAME, token):
     global selected_voice_id  # Use the global variable to store the selected voice ID
@@ -49,45 +93,56 @@ async def find_voice_id(CHARACTER_NAME, token):
         voices = await client.utils.search_voices(CHARACTER_NAME)
 
         if not voices:
-            print(f"No voices found for character: {CHARACTER_NAME}")
+            current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+            print(f"{grey}{current_time}{light_blue} INFO{reset}     No voices found for character: {CHARACTER_NAME}")
             return None
 
         # If the token is 0, select the first available voice
         if token == "0":
             selected_voice_id = voices[0].voice_id
-            print(f"Selected voice ID: {selected_voice_id} for character: {CHARACTER_NAME}")
+            current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+            print(f"{grey}{current_time}{blue} EXEC{reset} <-> Selected voice ID: {selected_voice_id} for character: {CHARACTER_NAME}")
             return selected_voice_id
 
         # Print out the voices and their IDs
-        print(f"Found voices for {CHARACTER_NAME}:")
+        current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+        print(f"{grey}{current_time}{light_blue} INFO{reset}     Found voices for {CHARACTER_NAME}:")
                 
                 
+               
                 
-                
-        user_input = input("Search for and select a voice ID?" + " (Y/n): ").lower() 
-        if user_input == 'y':
-            count = 0
-            for voice in voices:
-                print(f"{count}: {voice.name}, Voice ID: {voice.voice_id}")
-                count += 1
-            user_input = input("Select a voice (#): ").lower()
-            if user_input.isdigit():
-                voice_select = int(user_input)
-                selected_voice_id = voices[voice_select].voice_id
-                return selected_voice_id
-            else:
-                print("Must be a number... Using voice 0.")
-                selected_voice_id = voices[0].voice_id
-                return selected_voice_id
+        user_input = get_input_with_timeout(f"{grey}{current_time}{light_green} USER{reset} >-> Select a voice ID from list?" + " (Y/n): ", timeout)
+        if user_input != None:
+            user_input = user_input.lower()
+            if user_input == 'y':
+                count = 0
+                for voice in voices:
+                    print(f"{count}: {voice.name}, Voice ID: {voice.voice_id}")
+                    count += 1
+                user_input = input(f"{grey}{current_time}{light_green} USER{reset} <-> Select a voice (#): ").lower()
+                if user_input.isdigit():
+                    voice_select = int(user_input)
+                    selected_voice_id = voices[voice_select].voice_id
+                    return selected_voice_id
+                else:
+                    print(f"{grey}{current_time}{light_blue} INFO{reset}     Must be a number... Using voice 0.")
+                    selected_voice_id = voices[0].voice_id
+                    return selected_voice_id
         if user_input == 'n':
 # Select the first voice by default if no specific one is selected
-            print("OK... Using voice 0.")
+            print(f"{grey}{current_time}{blue} EXEC{reset} --> OK... Using voice 0.")
             selected_voice_id = voices[0].voice_id
+            return selected_voice_id
 # Return the voice ID of the first voice (or select a specific one)            
             return selected_voice_id
-        else:
-            print("Incorrect respone... defaulting to voice 0.")          
+        if user_input == None:
+            print(f"\n{grey}{current_time}{red} ERRO{reset} <-> No response... defaulting to voice 0.")
             selected_voice_id = voices[0].voice_id
+            return selected_voice_id
+        else:
+            print(f"{grey}{current_time}{blue} EXEC{reset} --> Incorrect response... defaulting to voice 0.")          
+            selected_voice_id = voices[0].voice_id
+            return selected_voice_id
     except Exception as e:
         print(f"Error occurred: {e}")
         return None
@@ -138,24 +193,28 @@ class TTSButton(Button):
 
         except Exception as e:
             # Handle errors and inform the user
-            await interaction.followup.send(f"``error generating voice:`` {e}")
+            current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+            await interaction.followup.send(f"{grey}{current_time}{red} ERRO{reset} <-> ``error generating voice:`` {e}")
 
 
 @bot.event
 async def on_ready():
     global client, chat, me
-    print(f"Logged in as {bot.user}")
+    current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+    print(f"{grey}{current_time}{blue} EXEC{reset} --> Logged in as {light_blue} {bot.user}")
     client = await get_client(token=CHARACTER_TOKEN)
     chat = await client.chat.fetch_chat(STATIC_CHAT_ID)
     me = await client.account.fetch_me()
-    print(f"Authenticated as @{me.username}")
+    current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+    print(f"{grey}{current_time}{blue} EXEC{reset} --> Authenticated as {light_green}@{me.username}")
     
     # Call find_voice_id after bot logs in
     voice_id = await find_voice_id(CHARACTER_NAME, CHARACTER_TOKEN)
+    current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
     if voice_id:
-        print(f"Voice ID for {CHARACTER_NAME}: {voice_id}")
+        print(f"{grey}{current_time}{blue} EXEC{reset} --> Voice ID for {CHARACTER_NAME}: {voice_id}")
     else:
-        print("Could not find voice ID.")
+        print(f"{grey}{current_time}{red} ERRO{reset} <-> Could not find voice ID.")
 
 
 @bot.command(name="commands")
@@ -206,9 +265,9 @@ async def send_character_message(message, user_message):
         await message.channel.send(content=reply_text, view=view)
 
     except SessionClosedError:
-        await message.channel.send("Session closed. Try again later.")
+        await message.channel.send(f"{grey}{current_time}{light_blue} INFO{reset}     Session closed. Try again later.")
     except Exception as e:
-        await message.channel.send(f"Error: {e}")
+        await message.channel.send(f"{grey}{current_time}{red} ERRO{reset} <-> {e}")
 
-
+clear_screen()
 bot.run(DISCORD_TOKEN)
