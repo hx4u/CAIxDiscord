@@ -1,4 +1,4 @@
-# caipy
+# caixdiscord
 # Discord Character AI Bot
 
 This is a Discord bot that interacts with Character.AI and uses TTS (Text-to-Speech) functionality to generate speech for messages. The bot uses the `PyCharacterAI` library to interact with the Character.AI API.
