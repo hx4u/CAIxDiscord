@@ -6,6 +6,12 @@ import asyncio
 from PyCharacterAI import get_client
 from PyCharacterAI.exceptions import SessionClosedError
 
+# Load configuration from config.json
+def load_config():
+    with open('config.json', 'r') as f:
+        config = json.load(f)
+    return config
+
 # Configuration
 config = load_config()
 
