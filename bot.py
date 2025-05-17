@@ -43,26 +43,44 @@ async def find_voice_id(character_name, token):
 
         # Print out the voices and their IDs
         print(f"Found voices for {character_name}:")
-        for voice in voices:
-            print(f"Voice Name: {voice.name}, Voice ID: {voice.voice_id}")
-
-        # Select the first voice by default if no specific one is selected
-        selected_voice_id = voices[0].voice_id
-
-        # Return the voice ID of the first voice (or select a specific one)
-        return selected_voice_id
-
+                
+                
+                
+                
+        user_input = input("Search for and select a voice ID?" + " (Y/n): ").lower() 
+        if user_input == 'y':
+            count = 0
+            for voice in voices:
+                print(f"{count}: {voice.name}, Voice ID: {voice.voice_id}")
+                count += 1
+            user_input = input("Select a voice (#): ").lower()
+            if user_input.isdigit():
+                voice_select = int(user_input)
+                selected_voice_id = voices[voice_select].voice_id
+                return selected_voice_id
+            else:
+                print("Must be a number... Using voice 0.")
+                selected_voice_id = voices[0].voice_id
+                return selected_voice_id
+        if user_input == 'n':
+# Select the first voice by default if no specific one is selected
+            print("OK... Using voice 0.")
+            selected_voice_id = voices[0].voice_id
+# Return the voice ID of the first voice (or select a specific one)            
+            return selected_voice_id
     except Exception as e:
         print(f"Error occurred: {e}")
         return None
-
 
 # Replace with your actual token
 token = CHARACTER_TOKEN  # Default token (can be "0" if you want to use the first voice)
 character_name = "L Lawliet"
 
 # Run the async function to get the selected voice ID
-asyncio.run(find_voice_id(character_name, token))
+# asyncio.run(find_voice_id(character_name, token))
+
+# Run the async function to get the selected voice ID
+# asyncio.run(find_voice_id(character_name, token))
 
 
 class TTSButton(Button):
