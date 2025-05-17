@@ -7,10 +7,12 @@ from PyCharacterAI import get_client
 from PyCharacterAI.exceptions import SessionClosedError
 
 # Configuration
-DISCORD_TOKEN = "DISCORD_TOKEN"
-CHARACTER_TOKEN = "CHARACTER_TOKEN"
-CHARACTER_ID = "CHARACTER_ID"
-STATIC_CHAT_ID = "STATIC_CHAT_ID"  # Must be pre-created manually on Character.AI
+config = load_config()
+
+DISCORD_TOKEN = config["DISCORD_TOKEN"]
+CHARACTER_TOKEN = config["CHARACTER_TOKEN"]
+CHARACTER_ID = config["CHARACTER_ID"]
+STATIC_CHAT_ID = config["STATIC_CHAT_ID"]
 
 intents = discord.Intents.default()
 intents.message_content = True
