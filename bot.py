@@ -1,17 +1,24 @@
 import os
+import io
+import sys
+import json
+import asyncio
 import discord
 from discord.ext import commands
 from discord.ui import Button, View
-import asyncio
 from PyCharacterAI import get_client
 from PyCharacterAI.exceptions import SessionClosedError
 
 # Load configuration from config.json
 def load_config():
-    with open('config.json', 'r') as f:
-        config = json.load(f)
-    return config
-
+    try:
+        with open('config.json', 'r') as f:
+            config = json.load(f)
+        return config
+    except Exception as e:
+        print(f"Error occurred: {e}")
+        return None
+    
 # Configuration
 config = load_config()
 
@@ -19,6 +26,8 @@ DISCORD_TOKEN = config["DISCORD_TOKEN"]
 CHARACTER_TOKEN = config["CHARACTER_TOKEN"]
 CHARACTER_ID = config["CHARACTER_ID"]
 STATIC_CHAT_ID = config["STATIC_CHAT_ID"]
+CHARACTER_NAME = config["CHARACTER_NAME"]
+
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -30,27 +39,27 @@ me = None
 selected_voice_id = None  # Global variable for the selected voice ID
 
 
-async def find_voice_id(character_name, token):
+async def find_voice_id(CHARACTER_NAME, token):
     global selected_voice_id  # Use the global variable to store the selected voice ID
 
     client = await get_client(token=token)
 
     try:
         # Search for voices for the character
-        voices = await client.utils.search_voices(character_name)
+        voices = await client.utils.search_voices(CHARACTER_NAME)
 
         if not voices:
-            print(f"No voices found for character: {character_name}")
+            print(f"No voices found for character: {CHARACTER_NAME}")
             return None
 
         # If the token is 0, select the first available voice
         if token == "0":
             selected_voice_id = voices[0].voice_id
-            print(f"Selected voice ID: {selected_voice_id} for character: {character_name}")
+            print(f"Selected voice ID: {selected_voice_id} for character: {CHARACTER_NAME}")
             return selected_voice_id
 
         # Print out the voices and their IDs
-        print(f"Found voices for {character_name}:")
+        print(f"Found voices for {CHARACTER_NAME}:")
                 
                 
                 
@@ -76,28 +85,27 @@ async def find_voice_id(character_name, token):
             selected_voice_id = voices[0].voice_id
 # Return the voice ID of the first voice (or select a specific one)            
             return selected_voice_id
+        else:
+            print("Incorrect respone... defaulting to voice 0.")          
+            selected_voice_id = voices[0].voice_id
     except Exception as e:
         print(f"Error occurred: {e}")
         return None
 
 # Replace with your actual token
 token = CHARACTER_TOKEN  # Default token (can be "0" if you want to use the first voice)
-character_name = "L Lawliet"
 
 # Run the async function to get the selected voice ID
-# asyncio.run(find_voice_id(character_name, token))
-
-# Run the async function to get the selected voice ID
-# asyncio.run(find_voice_id(character_name, token))
+# asyncio.run(find_voice_id(CHARACTER_NAME, token))
 
 
 class TTSButton(Button):
-    def __init__(self, chat_id, turn_id, candidate_id, character_name, voice_id):
+    def __init__(self, chat_id, turn_id, candidate_id, CHARACTER_NAME, voice_id):
         super().__init__(emoji="🔊", style=discord.ButtonStyle.primary)
         self.chat_id = chat_id
         self.turn_id = turn_id
         self.candidate_id = candidate_id
-        self.character_name = character_name
+        self.CHARACTER_NAME = CHARACTER_NAME
         self.voice_id = voice_id  # Pass the selected voice ID
 
     async def callback(self, interaction: discord.Interaction):
@@ -143,9 +151,9 @@ async def on_ready():
     print(f"Authenticated as @{me.username}")
     
     # Call find_voice_id after bot logs in
-    voice_id = await find_voice_id(character_name, CHARACTER_TOKEN)
+    voice_id = await find_voice_id(CHARACTER_NAME, CHARACTER_TOKEN)
     if voice_id:
-        print(f"Voice ID for {character_name}: {voice_id}")
+        print(f"Voice ID for {CHARACTER_NAME}: {voice_id}")
     else:
         print("Could not find voice ID.")
 
@@ -155,10 +163,10 @@ async def help_command(ctx):
     help_text = (
         "**Available Commands:**\n"
         "`!chat [message]` — Chat with the character.\n"
-        "`!image [message]` — Generate some images.\n"
+        "`!image [prompt]` — Generate some images.\n"
         "`@BotName [message]` — Mention the bot to chat.\n"
         "``!commands` — Show this help message.\n"
-        "Click 🔊 under any bot message to generate speech."
+        "Click 🔊  under bot message to generate speech."
     )
     await ctx.send(help_text)
 
