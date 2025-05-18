@@ -7,10 +7,28 @@ import signal
 import asyncio
 import discord
 import platform
+import argparse
 from discord.ext import commands
 from discord.ui import Button, View
 from PyCharacterAI import get_client
 from PyCharacterAI.exceptions import SessionClosedError
+
+  
+def clear_screen():
+    # Pause to allow user to see previous output
+    time.sleep(0.5)
+    # Check OS and clear screen accordingly
+    if platform.system() == "Windows":
+        os.system('cls')
+    else:
+        os.system('clear')
+
+
+clear_screen()  
+  
+  
+  
+  
 
 # Load configuration from config.json
 def load_config():
@@ -21,24 +39,63 @@ def load_config():
     except Exception as e:
         print(f"Error occurred: {e}")
         return None
+
+# Display the help message
+def display_help():
+    help_text = (
+        "Usage: python bot.py [options]\n\n"
+        "Options:\n"
+        "  --options             Show this help message and exit.\n"
+        "  --name             Set the character's name.\n"
+        "  --timeout          Set the timeout for selecting a voice (default 5 seconds).\n"
+    )
+    print(help_text)
+
+# Parse command-line arguments
+def parse_args():
+    parser = argparse.ArgumentParser(description="Discord bot with TTS integration.")
+    parser.add_argument('--options', action='store_true', help="Show this help message and exit.")
+    parser.add_argument('--name', type=str, help="Set the character's name.")
+    parser.add_argument('--timeout', type=int, default=5, help="Set the timeout for selecting a voice (default 5 seconds).")
+    return parser.parse_args()
+
+# Main entry point
+if __name__ == "__main__":
+    # Parse the arguments
+    args = parse_args()
+
+    # If --help is called, display help and exit
+    if args.options:
+        display_help()
+        sys.exit(0)  # Exit after displaying help
+
+    # Load the config (or use arguments if provided)
+    config = load_config() # if config is None else config
+
+    DISCORD_TOKEN = config["DISCORD_TOKEN"]
+    CHARACTER_TOKEN = config["CHARACTER_TOKEN"]
+    CHARACTER_ID = config["CHARACTER_ID"]
+    STATIC_CHAT_ID = config["STATIC_CHAT_ID"]
+    CHARACTER_NAME = args.name or config["CHARACTER_NAME"]
+    timeout = args.timeout
+
+    # Bot and other code continues below...
+    intents = discord.Intents.default()
+    intents.message_content = True
+    bot = commands.Bot(command_prefix="!", intents=intents)
+
+    client = None
+    chat = None
+    me = None
+    selected_voice_id = None  # Global variable for the selected voice ID
+  
+  
+  
+
+  
+  
     
-# Configuration
-config = load_config()
-DISCORD_TOKEN = config["DISCORD_TOKEN"]
-CHARACTER_TOKEN = config["CHARACTER_TOKEN"]
-CHARACTER_ID = config["CHARACTER_ID"]
-STATIC_CHAT_ID = config["STATIC_CHAT_ID"]
-CHARACTER_NAME = config["CHARACTER_NAME"]
-
-intents = discord.Intents.default()
-intents.message_content = True
-bot = commands.Bot(command_prefix="!", intents=intents)
-
-client = None
-chat = None
-me = None
-selected_voice_id = None  # Global variable for the selected voice ID
- 
+    
 red = '\033[91m'  # Red color for the message
 grey = '\033[90m'  # Grey color for the time
 blue = '\033[34m'  # Blue color for the message
@@ -50,7 +107,7 @@ light_pink = '\033[95m'  # Light pink (magenta) color for the message
 dark_red = '\033[38;5;52m'  # Dark red color for the message
 bright_red = '\033[91m'  # Bright red color for the message
 
-timeout = 5
+timeout = 9
 
 class TimeoutException(Exception):
     pass
@@ -73,15 +130,7 @@ def get_input_with_timeout(prompt, timeout):
         return user_input
     except TimeoutException:
         return None  # Timeout occurred
-  
-def clear_screen():
-    # Pause to allow user to see previous output
-    time.sleep(0.5)
-    # Check OS and clear screen accordingly
-    if platform.system() == "Windows":
-        os.system('cls')
-    else:
-        os.system('clear')
+
 
 async def find_voice_id(CHARACTER_NAME, token):
     global selected_voice_id  # Use the global variable to store the selected voice ID
@@ -111,15 +160,31 @@ async def find_voice_id(CHARACTER_NAME, token):
                 
                
                 
-        user_input = get_input_with_timeout(f"{grey}{current_time}{light_green} USER{reset} >-> Select a voice ID from list?" + " (Y/n): ", timeout)
+        user_input = get_input_with_timeout(f"{grey}{current_time}{light_green} USER{reset} >-- Select a voice ID from list? (Defaults to first voice found)." + " (Y/n): ", timeout)
         if user_input != None:
             user_input = user_input.lower()
             if user_input == 'y':
                 count = 0
+                current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+                
+                print(f"")
+                print(f"{grey}╔═{reset}num: voice-identifier:         voice-name:")
                 for voice in voices:
-                    print(f"{count}: {voice.name}, Voice ID: {voice.voice_id}")
+                    
+                    
+                    
+                    
+                    print(f"{grey}║#{reset} {count:02}: {voice.voice_id}: {voice.name}")
                     count += 1
+                    
+                    
+                print(f"{grey}╚════════════════════════════════════════════╗")
+                
+                
                 user_input = input(f"{grey}{current_time}{light_green} USER{reset} <-> Select a voice (#): ").lower()
+                
+                
+                
                 if user_input.isdigit():
                     voice_select = int(user_input)
                     selected_voice_id = voices[voice_select].voice_id
@@ -130,16 +195,19 @@ async def find_voice_id(CHARACTER_NAME, token):
                     return selected_voice_id
         if user_input == 'n':
 # Select the first voice by default if no specific one is selected
+            current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
             print(f"{grey}{current_time}{blue} EXEC{reset} --> OK... Using voice 0.")
             selected_voice_id = voices[0].voice_id
             return selected_voice_id
 # Return the voice ID of the first voice (or select a specific one)            
             return selected_voice_id
         if user_input == None:
+            current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
             print(f"\n{grey}{current_time}{red} ERRO{reset} <-> No response... defaulting to voice 0.")
             selected_voice_id = voices[0].voice_id
             return selected_voice_id
         else:
+            current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
             print(f"{grey}{current_time}{blue} EXEC{reset} --> Incorrect response... defaulting to voice 0.")          
             selected_voice_id = voices[0].voice_id
             return selected_voice_id
@@ -222,9 +290,9 @@ async def help_command(ctx):
     help_text = (
         "**Available Commands:**\n"
         "`!chat [message]` — Chat with the character.\n"
-        "`!image [prompt]` — Generate some images.\n"
-        "`@BotName [message]` — Mention the bot to chat.\n"
-        "``!commands` — Show this help message.\n"
+        "`@name [message]` — Mention the bot to chat.\n"
+        "`!image [prompt]` — Generates some images.\n"
+        "`!commands` — Show this help message.\n"
         "Click 🔊  under bot message to generate speech."
     )
     await ctx.send(help_text)
@@ -233,6 +301,26 @@ async def help_command(ctx):
 @bot.command(name="chat")
 async def chat_command(ctx, *, message: str):
     await send_character_message(ctx.message, message)
+
+
+# Command to generate image from prompt
+@bot.command(name="image")
+async def image_command(ctx, *, prompt: str):
+    current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+    try:
+        urls = await client.utils.generate_image(prompt)
+        if not urls:
+            await ctx.send(f"{grey}{current_time}{red} ERRO{reset} <-> No images generated.")
+            return
+        # Send all images as embeds
+        for url in urls:
+            embed = discord.Embed(title=f"{grey}{current_time}{red} INFO{reset} --> Image result for: {prompt}")
+            embed.set_image(url=url)
+            await ctx.send(embed=embed)
+    except Exception as e:
+        await ctx.send(f"{grey}{current_time}{red} ERRO{reset} <-> Failed to generate image: {e}")
+
+
 
 
 @bot.event
@@ -269,5 +357,9 @@ async def send_character_message(message, user_message):
     except Exception as e:
         await message.channel.send(f"{grey}{current_time}{red} ERRO{reset} <-> {e}")
 
-clear_screen()
+
+
+
+
+
 bot.run(DISCORD_TOKEN)
