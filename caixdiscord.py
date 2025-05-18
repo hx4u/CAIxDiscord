@@ -45,7 +45,7 @@ def display_help():
     help_text = (
         "Usage: python bot.py [options]\n\n"
         "Options:\n"
-        "  --options             Show this help message and exit.\n"
+        "  --options          Show this help message and exit.\n"
         "  --name             Set the character's name.\n"
         "  --timeout          Set the timeout for selecting a voice (default 5 seconds).\n"
     )
