@@ -4,6 +4,7 @@ import sys
 import time
 import json
 import signal
+import random
 import asyncio
 import discord
 import platform
@@ -48,6 +49,7 @@ def display_help():
         "  --options          Show this help message and exit.\n"
         "  --name             Set the character's name.\n"
         "  --timeout          Set the timeout for selecting a voice (default 9 seconds).\n"
+        "  --unexpected_replying Percentage chance (0-100) for the bot to randomly reply to messages.\n"
     )
     print(help_text)
 
@@ -56,7 +58,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Discord bot with TTS integration.")
     parser.add_argument('--options', action='store_true', help="Show this help message and exit.")
     parser.add_argument('--name', type=str, help="Set the character's name.")
-    parser.add_argument('--timeout', type=int, default=9, help="Set the timeout for selecting a voice (default 5 seconds).")
+    parser.add_argument('--timeout', type=int, default=9, help="Set the timeout for selecting a voice (default 9 seconds).")
+    parser.add_argument('--unexpected_replying', type=int, default=0, help="Percentage chance (0-100) for the bot to randomly reply to messages.")
     return parser.parse_args()
 
 # Main entry point
@@ -88,12 +91,6 @@ if __name__ == "__main__":
     chat = None
     me = None
     selected_voice_id = None  # Global variable for the selected voice ID
-  
-  
-  
-
-  
-  
     
     
 red = '\033[91m'  # Red color for the message
@@ -284,6 +281,11 @@ async def on_ready():
         print(f"{grey}{current_time}{blue} EXEC{reset} --> Voice ID for {CHARACTER_NAME}: {voice_id}")
     else:
         print(f"{grey}{current_time}{red} ERRO{reset} <-> Could not find voice ID.")
+    current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+    message.channel.send(f"{grey}{current_time}{light_blue} INFO{reset}     All permaters set and API is active.")
+    current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+    message.channel.send(f"{grey}{current_time}{light_blue} INFO{reset}     You can check back here for errors or system updates.")    
+
 
 
 @bot.command(name="commands")
@@ -323,19 +325,33 @@ async def image_command(ctx, *, prompt: str):
 
 
 
+global unexpected_replying
+unexpected_replying = args.unexpected_replying
 
 @bot.event
 async def on_message(message):
+    # Ignore messages sent by the bot itself
     if message.author == bot.user:
         return
 
-    if bot.user.mentioned_in(message):
-        content = message.clean_content.replace(f"@{bot.user.name}", "").strip()
-        if content:
-            await send_character_message(message, content)
+    # Process commands regardless of content
     await bot.process_commands(message)
 
+    # Strip the bot mention from the message content
+    content = message.clean_content.replace(f"@{bot.user.name}", "").strip()
 
+    # If bot is mentioned and content exists
+    if bot.user.mentioned_in(message) and content:
+        await send_character_message(message, content)
+        return
+
+    # Randomly respond based on unexpected_replying chance
+    if unexpected_replying > 0 and random.randint(1, 100) <= unexpected_replying and content:
+        await send_character_message(message, content)
+      
+      
+      
+      
 async def send_character_message(message, user_message):
     try:
         answer = await client.chat.send_message(CHARACTER_ID, chat.chat_id, user_message)
