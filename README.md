@@ -37,7 +37,10 @@ python3 caixdiscord.py --options
 ```
 python3 caixdiscord.py --Name Blade
 ```
-
+- Executes the program quickly (defaults to voice pack 0):
+```
+python3 caixdiscord.py --Timeout 1
+```
 ### Commands for in Discord:
 - Initiate a command with "!".
 - Use "!help" to display general command help.
