@@ -27,15 +27,15 @@ This is a Discord bot that interacts with Character.AI and uses TTS (Text-to-Spe
   
 ### Executing the Program:
 ```
-Python3 caixdiscord.py
+python3 caixdiscord.py
 ```
 - To show the help page:
 ```
-Python3 caixdiscord.py --options
+python3 caixdiscord.py --options
 ```
 - Execute the program with a new voice pack:
 ```
-Python3 caixdiscord.py --Name Blade
+python3 caixdiscord.py --Name Blade
 ```
 
 ### Commands for in Discord:
