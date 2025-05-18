@@ -35,11 +35,11 @@ python3 caixdiscord.py --options
 ```
 - Execute the program with a new voice pack:
 ```
-python3 caixdiscord.py --Name Blade
+python3 caixdiscord.py --name Blade
 ```
 - Executes the program quickly (defaults to voice pack 0):
 ```
-python3 caixdiscord.py --Timeout 1
+python3 caixdiscord.py --timeout 1
 ```
 ### Commands for in Discord:
 - Initiate a command with "!".
