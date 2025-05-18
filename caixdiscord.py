@@ -47,7 +47,7 @@ def display_help():
         "Options:\n"
         "  --options          Show this help message and exit.\n"
         "  --name             Set the character's name.\n"
-        "  --timeout          Set the timeout for selecting a voice (default 5 seconds).\n"
+        "  --timeout          Set the timeout for selecting a voice (default 9 seconds).\n"
     )
     print(help_text)
 
@@ -56,7 +56,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Discord bot with TTS integration.")
     parser.add_argument('--options', action='store_true', help="Show this help message and exit.")
     parser.add_argument('--name', type=str, help="Set the character's name.")
-    parser.add_argument('--timeout', type=int, default=5, help="Set the timeout for selecting a voice (default 5 seconds).")
+    parser.add_argument('--timeout', type=int, default=9, help="Set the timeout for selecting a voice (default 5 seconds).")
     return parser.parse_args()
 
 # Main entry point
@@ -107,8 +107,9 @@ light_pink = '\033[95m'  # Light pink (magenta) color for the message
 dark_red = '\033[38;5;52m'  # Dark red color for the message
 bright_red = '\033[91m'  # Bright red color for the message
 
-timeout = 9
-
+timeout = args.timeout
+if timeout == 0:
+    timeout = 1
 class TimeoutException(Exception):
     pass
   
@@ -132,7 +133,7 @@ def get_input_with_timeout(prompt, timeout):
         return None  # Timeout occurred
 
 
-async def find_voice_id(CHARACTER_NAME, token):
+async def find_voice_id(CHARACTER_NAME, token, timeout):
     global selected_voice_id  # Use the global variable to store the selected voice ID
 
     client = await get_client(token=token)
@@ -277,7 +278,7 @@ async def on_ready():
     print(f"{grey}{current_time}{blue} EXEC{reset} --> Authenticated as {light_green}@{me.username}")
     
     # Call find_voice_id after bot logs in
-    voice_id = await find_voice_id(CHARACTER_NAME, CHARACTER_TOKEN)
+    voice_id = await find_voice_id(CHARACTER_NAME, CHARACTER_TOKEN, timeout)
     current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
     if voice_id:
         print(f"{grey}{current_time}{blue} EXEC{reset} --> Voice ID for {CHARACTER_NAME}: {voice_id}")
