@@ -24,3 +24,31 @@ This is a Discord bot that interacts with Character.AI and uses TTS (Text-to-Spe
 - **CHARACTER_ID**: Find it in the URL of the character's page on Character.AI.
 - **STATIC_CHAT_ID**: Extract from the network tab of the browser’s developer tools while chatting with the character. Enter the history thread and collect it fro the url bar (?hist=STATIC_CHAT_ID).
 - **CHARACTER_NAME**: Fill this in with the name of the AI you are using. This is for searching for voice packs for the TTS feature.
+  
+### Executing the Program:
+```
+Python3 caixdiscord.py
+```
+- To show the help page:
+```
+Python3 caixdiscord.py --options
+```
+- Execute the program with a new voice pack:
+```
+Python3 caixdiscord.py --Name Blade
+```
+
+### Commands for in Discord:
+- Initiate a command with "!".
+- Use "!help" to display general command help.
+- Use "!help command" to display help for specific commands.
+  
+- Use "!commands" to show this:
+```
+Available Commands:
+!chat [message] — Chat with the character.
+@Name [message] — Mention the bot to chat.
+!image [prompt] — Generate some images.
+!commands — Show this help message.
+Click 🔊  under bot message to generate speech.
+```
