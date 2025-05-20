@@ -27,7 +27,8 @@ def clear_screen():
 
 clear_screen()  
   
-  
+def get_current_time():
+    return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())  
   
   
 
@@ -140,19 +141,19 @@ async def find_voice_id(CHARACTER_NAME, token, timeout):
         voices = await client.utils.search_voices(CHARACTER_NAME)
 
         if not voices:
-            current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+            get_current_time()
             print(f"{grey}{current_time}{light_blue} INFO{reset}     No voices found for character: {CHARACTER_NAME}")
             return None
 
         # If the token is 0, select the first available voice
         if token == "0":
             selected_voice_id = voices[0].voice_id
-            current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+            get_current_time()
             print(f"{grey}{current_time}{blue} EXEC{reset} <-> Selected voice ID: {selected_voice_id} for character: {CHARACTER_NAME}")
             return selected_voice_id
 
         # Print out the voices and their IDs
-        current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+        get_current_time()
         print(f"{grey}{current_time}{light_blue} INFO{reset}     Found voices for {CHARACTER_NAME}:")
                 
                 
@@ -163,7 +164,7 @@ async def find_voice_id(CHARACTER_NAME, token, timeout):
             user_input = user_input.lower()
             if user_input == 'y':
                 count = 0
-                current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+                get_current_time()
                 
                 print(f"")
                 print(f"{grey}╔═{reset}num: voice-identifier:         voice-name:")
@@ -193,19 +194,19 @@ async def find_voice_id(CHARACTER_NAME, token, timeout):
                     return selected_voice_id
         if user_input == 'n':
 # Select the first voice by default if no specific one is selected
-            current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+            get_current_time()
             print(f"{grey}{current_time}{blue} EXEC{reset} --> OK... Using voice 0.")
             selected_voice_id = voices[0].voice_id
             return selected_voice_id
 # Return the voice ID of the first voice (or select a specific one)            
             return selected_voice_id
         if user_input == None:
-            current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+            get_current_time()
             print(f"\n{grey}{current_time}{red} ERRO{reset} <-> No response... defaulting to voice 0.")
             selected_voice_id = voices[0].voice_id
             return selected_voice_id
         else:
-            current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+            get_current_time()
             print(f"{grey}{current_time}{blue} EXEC{reset} --> Incorrect response... defaulting to voice 0.")          
             selected_voice_id = voices[0].voice_id
             return selected_voice_id
@@ -259,31 +260,31 @@ class TTSButton(Button):
 
         except Exception as e:
             # Handle errors and inform the user
-            current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+            get_current_time()
             await interaction.followup.send(f"{grey}{current_time}{red} ERRO{reset} <-> ``error generating voice:`` {e}")
 
 
 @bot.event
 async def on_ready():
     global client, chat, me
-    current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+    get_current_time()
     print(f"{grey}{current_time}{blue} EXEC{reset} --> Logged in as {light_blue} {bot.user}")
     client = await get_client(token=CHARACTER_TOKEN)
     chat = await client.chat.fetch_chat(STATIC_CHAT_ID)
     me = await client.account.fetch_me()
-    current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+    get_current_time()
     print(f"{grey}{current_time}{blue} EXEC{reset} --> Authenticated as {light_green}@{me.username}")
     
     # Call find_voice_id after bot logs in
     voice_id = await find_voice_id(CHARACTER_NAME, CHARACTER_TOKEN, timeout)
-    current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+    get_current_time()
     if voice_id:
         print(f"{grey}{current_time}{blue} EXEC{reset} --> Voice ID for {CHARACTER_NAME}: {voice_id}")
     else:
         print(f"{grey}{current_time}{red} ERRO{reset} <-> Could not find voice ID.")
-    current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+    get_current_time()
     message.channel.send(f"{grey}{current_time}{light_blue} INFO{reset}     All permaters set and API is active.")
-    current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+    get_current_time()
     message.channel.send(f"{grey}{current_time}{light_blue} INFO{reset}     You can check back here for errors or system updates.")    
 
 
@@ -309,7 +310,7 @@ async def chat_command(ctx, *, message: str):
 # Command to generate image from prompt
 @bot.command(name="image")
 async def image_command(ctx, *, prompt: str):
-    current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+    get_current_time()
     try:
         urls = await client.utils.generate_image(prompt)
         if not urls:
