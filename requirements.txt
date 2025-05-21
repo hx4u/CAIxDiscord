@@ -1,4 +1,2 @@
 discord.py
-PyCharacterAI
-aiohttp
-requests
+curl_cffi
