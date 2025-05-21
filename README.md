@@ -1,3 +1,4 @@
+update log 2025-05-21 11:20AM broke, fixing now. pls chek in a few hours
 # CAIxDiscord
 # Discord Character AI Bot
 
