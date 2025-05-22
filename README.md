@@ -23,11 +23,11 @@ This is a Discord bot that interacts with Character.AI and uses TTS (Text-to-Spe
   pip install PyCharacterAI
 
 ### Instructions Overview:
-- **DISCORD_TOKEN**: Get from the Discord Developer Portal.
-- **CHARACTER_TOKEN**: Extract from your browser when logged into Character.AI. Look for "HTTP_AUTHORIZATION".
-- **USER_ID_TOKEN**: Find it in the URL of the character's page on Character.AI.
-- **STATIC_CHAT_ID**: Extract from the network tab of the browser’s developer tools while chatting with the character. Enter the history thread and collect it fro the url bar (?hist=STATIC_CHAT_ID).
-- **CHARACTER_NAME**: Fill this in with the name of the AI you are using. This is for searching for voice packs for the TTS feature.
+- **BOTS_DISCORD_TOKEN**: Get from the Discord Developer Portal.
+- **HTTP_AUTHORIZATION**: Extract from your browser when logged into Character.AI. Look for "HTTP_AUTHORIZATION".
+- **CHARACTER_INURL_ID**: Find it in the URL of the character's page on Character.AI.
+- **HISTORIES_INURL_ID**: Extract from the network tab of the browser’s developer tools while chatting with the character. Enter the history thread and collect it fro the url bar (?hist=STATIC_CHAT_ID).
+- **AIS_NAME_FOR_VOICE**: Fill this in with the name of the AI you are using. This is for searching for voice packs for the TTS feature.
   
 ### Executing the Program:
 ```
