@@ -360,28 +360,3 @@ async def send_character_message(message):
         print(f"{grey}{current_time}{red} ERRO {reset} <-> {e}")
 
 bot.run(bot_token)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
