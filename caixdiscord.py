@@ -7,11 +7,40 @@ from discord.ext import commands
 from discord.ui import Button, View
 from PyCharacterAI import get_client
 
+def clear_screen():
+    # Check OS and clear screen accordingly
+    if platform.system() == "Windows":
+        os.system('cls')
+    else:
+        os.system('clear')
+
 # Load configuration from config.json
 def load_config():
     with open('config.json', 'r') as f:
         config = json.load(f)
     return config
+
+def display_help():
+    help_text = (
+        "                                                                                                  \n"
+        "    .aMMMb  .aMMMb  dMP                    _____                                                  \n"
+        "   dMP VMP dMP dMP amr  ooooooo  ooooo  __|__   |__  __  ______  ______  _____  _____      _      \n"   
+        "  dMP     dMMMMMP dMP    `8888    d8'  |     |     ||__||   ___||   ___||  _  ||   __| _ _| |     \n"   
+        " dMP.aMP dMP dMP dMP       Y888..8P    |      |    ||  | `-.`-. |   |__ | |_| ||  |   | |_| |     \n"  
+        " VMMMP* dMP dMP dMP         `8888'     |______|  __||__||______||______||_____||__|   |___|_|     \n"
+        "                           .8PY888.       |_____|                                                 \n"
+        "   Character X            d8'  `888b                                                              \n"
+        "           Ai Discord   o888o  o88888o    A Character AI to Discord api with TTS integration.     \n"
+        "                                                                                                  \n"
+        "                                          Credits: LiteKira (kil_l_y) @hx4u - Version 1.0         \n"
+        " Usage: python caixdiscord.py [options]                                                           \n"
+        " Options:                                                                                         \n"
+        "   --name             Set the character's name.                                                   \n"
+        "   --timeout          Set the timeout for when selecting a voice (default 9 seconds).             \n"
+        "   --unexpected_replying Percentage chance (0-100) for the bot to randomly reply to messages.     \n"
+        "                                                                                                  \n"
+        )
+    print(help_text)
 
 # Function to get the AI's response
 async def chat_with_character(token, character_id, user_message, history_thread_id):
@@ -110,7 +139,11 @@ VOICENAME = config.get("AIS_NAME_FOR_VOICE")
 parser = argparse.ArgumentParser(description="Discord Bot with Unexpected Reply Feature.")
 parser.add_argument("--unexpected-reply", type=int, default=0, help="Chance of unexpected reply (0 to 100).")
 parser.add_argument("--name", type=str, help="Override the voice name from the config.")
+parser.add_argument('--clear', '-c', action='store_true', help="Clear the screen on start.")
+
 args = parser.parse_args()
+global unexpected_replying
+unexpected_replying = args.unexpected_replying
 
 # Use --name flag if provided, otherwise use the name from config.json
 voice_name = args.name if args.name else VOICENAME
@@ -144,7 +177,7 @@ async def on_ready():
 # TTS Button
 class TTSButton(Button):
     def __init__(self, chat_id: str, turn_id: str, candidate_id: str):
-        super().__init__(label="🔊 Generate TTS", style=discord.ButtonStyle.green)
+        super().__init__(label="🔊 TTS", style=discord.ButtonStyle.green)
         self.chat_id = chat_id
         self.turn_id = turn_id
         self.candidate_id = candidate_id
@@ -156,7 +189,7 @@ class TTSButton(Button):
         
         # If TTS audio is generated, send it and disable the button
         if tts_audio:
-            await interaction.response.send_message("Here is the TTS audio:", file=discord.File(tts_audio, filename="response.mp3"))
+            await interaction.response.send_message("", file=discord.File(tts_audio, filename="TTS.mp3"))
 
             # Disable the button after TTS has been generated and sent
             self.disabled = True
@@ -240,9 +273,17 @@ async def on_message(message):
         return
 
     # Random unexpected reply
-    if should_send_unexpected_reply(args.unexpected_reply):
-        unexpected_reply = "I'm just here to say something unexpected!"
-        await message.channel.send(unexpected_reply)
+    if unexpected_replying > 0 and random.randint(1, 100) <= unexpected_replying:
+        reply, chat_id, turn_id, candidate_id = await chat_with_character(AI_TOKEN, CHARACTER_ID, user_message, HISTORY_THREAD_ID)
+        if reply:
+            # Create a TTS button after the reply
+            tts_button = TTSButton(chat_id, turn_id, candidate_id)
+            view = View(timeout=None)  # Disable timeout so the button stays active
+            view.add_item(tts_button)
+            await message.channel.send(reply, view=view)
+
+
+        
 
     if message.content.startswith("!chat"):
         user_message = message.content[len("!chat "):]
@@ -269,6 +310,8 @@ async def on_message(message):
                 await message.channel.send("Sorry, I couldn't generate an image.")
         else:
             await message.channel.send("Please provide a prompt after `!image`.")
-
+if args.clear:
+    clear_screen()
+    display_help()
 # Run the bot
 bot.run(TOKEN)
