@@ -280,7 +280,6 @@ async def on_ready():
         print(f"{grey}{current_time}{blue} EXEC {reset} --> Voice ID for {voicename}: {voice_id}")
     else:
         print(f"{grey}{current_time}{red} ERRO {reset} <-> Could not find voice ID.")
-    
     print(f"{grey}{current_time}{light_blue} INFO {reset}     API is active and bot is ready.")
 
 # Update on_message to use the dynamic voice_id
@@ -309,7 +308,6 @@ async def on_message(message):
     # Randomly respond based on unexpected_replying chance
     if unexpected_replying > 0 and random.randint(1, 100) <= unexpected_replying and content:
         await send_character_message(message, content, voice_id)
-
 
 @bot.event
 async def on_message(message):
@@ -350,16 +348,14 @@ async def send_character_message(message):
         ))
 
         await message.channel.send(content=reply_text, view=view)
-
+        
     except SessionClosedError:
         current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
         print(f"{grey}{current_time}{light_blue} INFO {reset}     Session closed. Try again later.")
     except Exception as e:
         current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
         print(f"{grey}{current_time}{red} ERRO {reset} <-> {e}")
-
-
-
+        
 async def main():
     client = await get_client(token=token)
     me = await client.account.fetch_me()
