@@ -145,7 +145,7 @@ async def search_voice_packs(cai_client, voicename):
         return None
 
 # Discord Bot Setup
-config = load_config(
+config = load_config()
 
 # Extract values from the config
 TOKEN = config.get("BOTS_DISCORD_TOKEN")
@@ -296,13 +296,14 @@ def should_send_unexpected_reply(probability):
 # Ping command and !chat command
 @bot.event
 async def on_message(message):
-    client = await get_client(token=token)
+    client = await get_client(token=AI_TOKEN)  # Use AI_TOKEN instead of token
     if message.author == bot.user:
         return
         
     if unexpected_replying > 0 and random.randint(1, 100) <= unexpected_replying:
-        #reply, chat_id, turn_id, candidate_id = await chat_with_character(AI_TOKEN, CHARACTER_ID, user_message, HISTORY_THREAD_ID)
-        reply, chat_id, turn_id, candidate_id = await client.chat.send_message(character_id, chat.chat_id, user_message, history_thread_id)
+        # Handle unexpected replies
+        user_message = message.content
+        reply, chat_id, turn_id, candidate_id = await client.chat.send_message(CHARACTER_ID, user_message, HISTORY_THREAD_ID)
         if reply:
             # Create a TTS button after the reply
             tts_button = TTSButton(chat_id, turn_id, candidate_id)
@@ -312,14 +313,13 @@ async def on_message(message):
         else:
             await message.channel.send("``- could not get response -``")
     
+    # Handle replies to the bot's messages
     if message.reference and message.reference.resolved.author == bot.user:
         user_message = message.content
-        #reply, chat_id, turn_id, candidate_id = await chat_with_character(AI_TOKEN, CHARACTER_ID, user_message, HISTORY_THREAD_ID)
-        reply, chat_id, turn_id, candidate_id = await client.chat.send_message(character_id, chat.chat_id, user_message, history_thread_id)
+        reply, chat_id, turn_id, candidate_id = await client.chat.send_message(CHARACTER_ID, user_message, HISTORY_THREAD_ID)
         if reply:
-            # Create a TTS button after the reply
             tts_button = TTSButton(chat_id, turn_id, candidate_id)
-            view = View(timeout=None)  # Disable timeout so the button stays active
+            view = View(timeout=None)
             view.add_item(tts_button)
             await message.channel.send(reply, view=view)
         else:
@@ -327,12 +327,10 @@ async def on_message(message):
             
     elif bot.user.mentioned_in(message):
         user_message = message.content
-        #reply, chat_id, turn_id, candidate_id = await chat_with_character(AI_TOKEN, CHARACTER_ID, user_message, HISTORY_THREAD_ID)
-        reply, chat_id, turn_id, candidate_id = await client.chat.send_message(character_id, chat.chat_id, user_message, history_thread_id)
+        reply, chat_id, turn_id, candidate_id = await client.chat.send_message(CHARACTER_ID, user_message, HISTORY_THREAD_ID)
         if reply:
-            # Create a TTS button after the reply
             tts_button = TTSButton(chat_id, turn_id, candidate_id)
-            view = View(timeout=None)  # Disable timeout so the button stays active
+            view = View(timeout=None)
             view.add_item(tts_button)
             await message.channel.send(reply, view=view)
         else:
@@ -341,13 +339,10 @@ async def on_message(message):
     if message.content.startswith("!chat"):
         user_message = message.content[len("!chat "):]
         if user_message:
-            #reply, chat_id, turn_id, candidate_id = await chat_with_character(AI_TOKEN, CHARACTER_ID, user_message, HISTORY_THREAD_ID)
-            reply, chat_id, turn_id, candidate_id = await client.chat.send_message(character_id, chat.chat_id, user_message, history_thread_id)
-
+            reply, chat_id, turn_id, candidate_id = await client.chat.send_message(CHARACTER_ID, user_message, HISTORY_THREAD_ID)
             if reply:
-                # Create a TTS button after the reply
                 tts_button = TTSButton(chat_id, turn_id, candidate_id)
-                view = View(timeout=None)  # Disable timeout so the button stays active
+                view = View(timeout=None)
                 view.add_item(tts_button)
                 await message.channel.send(reply, view=view)
             else:
@@ -365,6 +360,7 @@ async def on_message(message):
                 await message.channel.send("``- could not generate image -``")
         else:
             await message.channel.send("Please provide a prompt after ``!image``")
+
 
 if args.clear:
     clear_screen()
