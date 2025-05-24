@@ -1,3 +1,4 @@
+import platform
 import asyncio
 import json
 import discord
@@ -6,6 +7,19 @@ import argparse
 from discord.ext import commands
 from discord.ui import Button, View
 from PyCharacterAI import get_client
+import os
+import time
+
+gre = '\033[92m'
+blu = '\033[94m'
+blue = '\033[34m'
+purple = '\033[38;5;129m'
+red = '\033[91m' 
+dark_red = '\033[38;5;52m'
+bright_red = '\033[91m'
+light_pink = '\033[95m'
+grey = '\033[90m'
+reset = '\033[0m'
 
 def clear_screen():
     # Check OS and clear screen accordingly
@@ -44,31 +58,32 @@ def display_help():
 
 # Function to get the AI's response
 async def chat_with_character(token, character_id, user_message, history_thread_id):
+    current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
     client = await get_client(token=token)
 
     try:
         # Fetch account information
         me = await client.account.fetch_me()
-        print(f"Logged in as @{me.username}")
+        print(f"{grey}{current_time}{gre} USER {reset} <-> Logged in as @{me.username}")
 
         # Use the provided history thread ID if it's available
         if history_thread_id:
             chat, greeting = await client.chat.create_chat(character_id, history_thread_id=history_thread_id)
-            print(f"{greeting.author_name}: {greeting.get_primary_candidate().text}")
+            print(f"{grey}{current_time}{blu} INFO {reset} <-> {greeting.author_name}: {greeting.get_primary_candidate().text}")
         else:
             # No history thread ID, create a new thread
             chat, greeting = await client.chat.create_chat(character_id)
-            print(f"New chat created with {greeting.author_name}: {greeting.get_primary_candidate().text}")
+            print(f"{grey}{current_time}{blu} INFO {reset} <-> New chat created with {greeting.author_name}: {greeting.get_primary_candidate().text}")
 
         # Send the user message
         response = await client.chat.send_message(character_id, chat.chat_id, user_message)
         reply = response.get_primary_candidate().text
-        print(f"{response.author_name}: {reply}")
+        print(f"{grey}{current_time}{blu} INFO {reset} <-> {response.author_name}: {reply}")
 
         return reply, chat.chat_id, response.turn_id, response.get_primary_candidate().candidate_id
 
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"{grey}{current_time}{red} ERROR{reset} <-> An error occurred: {e}")
         return None, None, None, None
     finally:
         # Ensure the session is properly closed
@@ -76,6 +91,7 @@ async def chat_with_character(token, character_id, user_message, history_thread_
 
 # Function to find and select the voice ID
 async def find_voice_id(cai_client, voicename):
+    current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
     try:
         voices = await cai_client.utils.search_voices(voicename)
 
@@ -85,24 +101,26 @@ async def find_voice_id(cai_client, voicename):
 
         # Select the first voice by default
         selected_voice_id = voices[0].voice_id
-        print(f"Selected voice ID: {selected_voice_id}")
+        print(f"{grey}{current_time}{blu} INFO {reset} <-> Selected voice ID: {selected_voice_id}")
         return selected_voice_id
 
     except Exception as e:
-        print(f"Error: {e}")
+        print("{grey}{current_time}{red} ERROR{reset} <-> Error: {e}")
         return None
 
 # Function to search voice packs
 async def search_voice_packs(cai_client, voicename):
+    current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
     try:
         voices = await cai_client.utils.search_voices(voicename)
 
         if voices:
-            print(f"Found {len(voices)} voice packs for {voicename}.")
+            print(f"{grey}{current_time}{blu} INFO {reset} <-> Found {len(voices)} voice packs for {voicename}.")
+            print(f"{grey}╔═{reset}num: voice-identifier:         voice-name:")
             for idx, voice in enumerate(voices[:99]):  # Display up to 99 voice packs
                 # Format numbers 0-9 with leading zeros
-                print(f"#{str(idx + 1).zfill(2)}: {voice.voice_id}, {voice.name}")
-
+                print(f"{grey}║#{reset}{str(idx + 1).zfill(2)}: {voice.voice_id}, {voice.name}")
+            print(f"{grey}╚═══════════════════════════════════╗{reset}")
             # Prompt user to select a voice pack
             selection = input(f"Please select a voice pack (1-{len(voices)}): ").strip()
 
@@ -110,19 +128,19 @@ async def search_voice_packs(cai_client, voicename):
                 selection_index = int(selection) - 1
                 if 0 <= selection_index < len(voices):
                     selected_voice_id = voices[selection_index].voice_id
-                    print(f"Selected voice pack: {voices[selection_index].name} ({selected_voice_id})")
+                    print(f"{grey}{current_time}{blu} INFO {reset} <-- Selected voice pack: {voices[selection_index].name} ({selected_voice_id})")
                     return selected_voice_id
                 else:
-                    print(f"Invalid selection. Using default voice pack.")
+                    print(f"{grey}{current_time}{blu} INFO {reset} <-> Invalid selection. Using default voice pack.")
                     return voices[0].voice_id
             else:
-                print(f"Invalid input. Using default voice pack.")
+                print(f"{grey}{current_time}{blu} INFO {reset} <-> Invalid input. Using default voice pack.")
                 return voices[0].voice_id
         else:
-            print("No voice packs found.")
+            print(f"{grey}{current_time}{red} ERROR{reset} <-> No voice packs found.")
             return None
     except Exception as e:
-        print(f"Error searching for voice packs: {e}")
+        print(f"{grey}{current_time}{red} ERROR{reset} <-> Error searching for voice packs: {e}")
         return None
 
 # Discord Bot Setup
@@ -137,13 +155,13 @@ VOICENAME = config.get("AIS_NAME_FOR_VOICE")
 
 # Command-line argument parsing
 parser = argparse.ArgumentParser(description="Discord Bot with Unexpected Reply Feature.")
-parser.add_argument("--unexpected-reply", type=int, default=0, help="Chance of unexpected reply (0 to 100).")
+parser.add_argument("--unexpected_reply", type=int, default=0, help="Chance of unexpected reply (0 to 100).")
 parser.add_argument("--name", type=str, help="Override the voice name from the config.")
 parser.add_argument('--clear', '-c', action='store_true', help="Clear the screen on start.")
 
 args = parser.parse_args()
 global unexpected_replying
-unexpected_replying = args.unexpected_replying
+unexpected_replying = args.unexpected_reply
 
 # Use --name flag if provided, otherwise use the name from config.json
 voice_name = args.name if args.name else VOICENAME
@@ -156,11 +174,12 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 # Select voice on bot startup
 selected_voice_id = None
 async def setup_voice():
+    current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
     global selected_voice_id
     cai_client = await get_client(token=AI_TOKEN)
     
     # Ask user if they want to search for voice packs
-    user_input = input("Would you like to search for voice packs? (Y/n): ").strip().lower()
+    user_input = input(f"{grey}{current_time}{gre} USER {reset} --> Would you like to search for voice packs? (Y/n): ").strip().lower()
 
     if user_input == "y":
         selected_voice_id = await search_voice_packs(cai_client, voice_name)
@@ -171,13 +190,15 @@ async def setup_voice():
 
 @bot.event
 async def on_ready():
-    print(f"Logged in as {bot.user.name} ({bot.user.id})")
+    current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+    print(f"{grey}{current_time}{gre} USER {reset} --> Logged in as {bot.user.name} ({bot.user.id})")
     await setup_voice()
 
 # TTS Button
 class TTSButton(Button):
+    current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
     def __init__(self, chat_id: str, turn_id: str, candidate_id: str):
-        super().__init__(label="🔊 TTS", style=discord.ButtonStyle.green)
+        super().__init__(label="🔊", style=discord.ButtonStyle.green)
         self.chat_id = chat_id
         self.turn_id = turn_id
         self.candidate_id = candidate_id
@@ -201,6 +222,7 @@ class TTSButton(Button):
             await interaction.response.send_message("Sorry, something went wrong with TTS generation.")
 
 async def generate_tts(chat_id: str, turn_id: str, candidate_id: str):
+    current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
     try:
         cai_client = await get_client(token=AI_TOKEN)
         
@@ -218,10 +240,11 @@ async def generate_tts(chat_id: str, turn_id: str, candidate_id: str):
         return filepath
 
     except Exception as e:
-        print(f"Error generating TTS: {e}")
+        print(f"{grey}{current_time}{red} ERROR{reset} <-> Error generating TTS: {e}")
         return None
 
 async def generate_tts(chat_id: str, turn_id: str, candidate_id: str):
+    current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
     try:
         cai_client = await get_client(token=AI_TOKEN)
         
@@ -239,11 +262,12 @@ async def generate_tts(chat_id: str, turn_id: str, candidate_id: str):
         return filepath
 
     except Exception as e:
-        print(f"Error generating TTS: {e}")
+        print(f"{grey}{current_time}{red} ERROR{reset} <-> Error generating TTS: {e}")
         return None
 
 # Function to generate an image from a prompt
 async def generate_image_from_prompt(prompt):
+    current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
     try:
         cai_client = await get_client(token=AI_TOKEN)
 
@@ -252,10 +276,10 @@ async def generate_image_from_prompt(prompt):
 
         if images:
             image_url = images[0]  # Take the first image URL
-            print(f"Generated image URL: {image_url}")
+            print(f"{grey}{current_time}{blu} INFO {reset} <-> Generated image URL: {image_url}")
             return image_url
         else:
-            print("No images generated.")
+            print(f"{grey}{current_time}{red} ERROR{reset} <-> No images generated.")
             return None
 
     except Exception as e:
@@ -273,18 +297,15 @@ async def on_message(message):
         return
 
     # Random unexpected reply
-    if unexpected_replying > 0 and random.randint(1, 100) <= unexpected_replying:
-        reply, chat_id, turn_id, candidate_id = await chat_with_character(AI_TOKEN, CHARACTER_ID, user_message, HISTORY_THREAD_ID)
-        if reply:
-            # Create a TTS button after the reply
-            tts_button = TTSButton(chat_id, turn_id, candidate_id)
-            view = View(timeout=None)  # Disable timeout so the button stays active
-            view.add_item(tts_button)
-            await message.channel.send(reply, view=view)
-
-
-        
-
+#    if unexpected_replying > 0 and random.randint(1, 100) <= unexpected_replying:
+ #       reply, chat_id, turn_id, candidate_id = await chat_with_character(AI_TOKEN, CHARACTER_ID, user_message, HISTORY_THREAD_ID)
+  #      if reply:
+   #         # Create a TTS button after the reply
+    #        tts_button = TTSButton(chat_id, turn_id, candidate_id)
+     #       view = View(timeout=None)  # Disable timeout so the button stays active
+      #      view.add_item(tts_button)
+       #     await message.channel.send(reply, view=view)
+            
     if message.content.startswith("!chat"):
         user_message = message.content[len("!chat "):]
         if user_message:
@@ -296,22 +317,22 @@ async def on_message(message):
                 view.add_item(tts_button)
                 await message.channel.send(reply, view=view)
             else:
-                await message.channel.send("Sorry, I couldn't get a response.")
+                await message.channel.send("``- could not get response -``")
         else:
-            await message.channel.send("Please provide a message after `!chat`.")
+            await message.channel.send("Please provide a message after ``!chat``")
     
     elif message.content.startswith("!image"):
         prompt = message.content[len("!image "):]
         if prompt:
             image_url = await generate_image_from_prompt(prompt)
             if image_url:
-                await message.channel.send(f"Here is your image: {image_url}")
+                await message.channel.send(f"{image_url}")
             else:
-                await message.channel.send("Sorry, I couldn't generate an image.")
+                await message.channel.send("``- could not generate image -``")
         else:
-            await message.channel.send("Please provide a prompt after `!image`.")
+            await message.channel.send("Please provide a prompt after ``!image``")
 if args.clear:
     clear_screen()
-    display_help()
 # Run the bot
+display_help()
 bot.run(TOKEN)
