@@ -56,7 +56,6 @@ def display_help():
         )
     print(help_text)
 
-# Function to get the AI's response
 async def chat_with_character(token, character_id, user_message, history_thread_id):
     current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
     client = await get_client(token=token)
@@ -66,28 +65,30 @@ async def chat_with_character(token, character_id, user_message, history_thread_
         me = await client.account.fetch_me()
         print(f"{grey}{current_time}{gre} USER {reset} <-> Logged in as @{me.username}")
 
-        # Use the provided history thread ID if it's available
-        if history_thread_id:
-            chat, greeting = await client.chat.create_chat(character_id, history_thread_id=history_thread_id)
-            print(f"{grey}{current_time}{blu} INFO {reset} <-> {greeting.author_name}: {greeting.get_primary_candidate().text}")
-        else:
-            # No history thread ID, create a new thread
-            chat, greeting = await client.chat.create_chat(character_id)
-            print(f"{grey}{current_time}{blu} INFO {reset} <-> New chat created with {greeting.author_name}: {greeting.get_primary_candidate().text}")
+        # Create or continue a chat using the provided history_thread_id
+        chat, greeting = await client.chat.create_chat(character_id, history_thread_id)
 
-        # Send the user message
-        response = await client.chat.send_message(character_id, chat.chat_id, user_message)
-        reply = response.get_primary_candidate().text
-        print(f"{grey}{current_time}{blu} INFO {reset} <-> {response.author_name}: {reply}")
+        # You can uncomment this line if you want to print the greeting message
+        # print(f"{grey}{current_time}{blu} INFO {reset} <-> {greeting.author_name}: {greeting.get_primary_candidate().text}")
 
-        return reply, chat.chat_id, response.turn_id, response.get_primary_candidate().candidate_id
+        # Send the user message, passing history_thread_id to maintain conversation continuity
+        async for response in client.chat.send_message(character_id, chat.chat_id, user_message, history_thread_id):
+            # Ensure that the response is valid before accessing primary candidate
+            if hasattr(response, 'get_primary_candidate'):
+                reply = response.get_primary_candidate().text
+                print(f"{grey}{current_time}{blu} INFO {reset} <-> {response.author_name}: {reply}")
+                return reply, chat.chat_id, response.turn_id, response.get_primary_candidate().candidate_id
+            else:
+                print(f"{grey}{current_time}{red} ERROR{reset} <-> No primary candidate found in response.")
 
     except Exception as e:
         print(f"{grey}{current_time}{red} ERROR{reset} <-> An error occurred: {e}")
         return None, None, None, None
+    
     finally:
-        # Ensure the session is properly closed
+        # Ensure the session is properly closed after the operation
         await client.close_session()
+
 
 # Function to find and select the voice ID
 async def find_voice_id(cai_client, voicename):
@@ -101,7 +102,7 @@ async def find_voice_id(cai_client, voicename):
 
         # Select the first voice by default
         selected_voice_id = voices[0].voice_id
-        print(f"{grey}{current_time}{blu} INFO {reset} <-> Selected voice ID: {selected_voice_id}")
+        print(f"{grey}{current_time}{blu} INFO {reset} <-- Selected voice ID: {selected_voice_id}")
         return selected_voice_id
 
     except Exception as e:
@@ -144,13 +145,14 @@ async def search_voice_packs(cai_client, voicename):
         return None
 
 # Discord Bot Setup
-config = load_config()
+config = load_config(
 
 # Extract values from the config
 TOKEN = config.get("BOTS_DISCORD_TOKEN")
 AI_TOKEN = config.get("HTTP_AUTHORIZATION")
 CHARACTER_ID = config.get("CHARACTER_INURL_ID")
 HISTORY_THREAD_ID = config.get("HISTORIES_INURL_ID")  # Load history thread ID from config
+history_thread_id = HISTORY_THREAD_ID
 VOICENAME = config.get("AIS_NAME_FOR_VOICE")
 
 # Command-line argument parsing
@@ -192,6 +194,7 @@ async def setup_voice():
 async def on_ready():
     current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
     print(f"{grey}{current_time}{gre} USER {reset} --> Logged in as {bot.user.name} ({bot.user.id})")
+    print(f"{grey}{current_time}{blu} INFO {reset} <-- AI History ID : {HISTORY_THREAD_ID}")
     await setup_voice()
 
 # TTS Button
@@ -293,23 +296,54 @@ def should_send_unexpected_reply(probability):
 # Ping command and !chat command
 @bot.event
 async def on_message(message):
+    client = await get_client(token=token)
     if message.author == bot.user:
         return
-
-    # Random unexpected reply
-#    if unexpected_replying > 0 and random.randint(1, 100) <= unexpected_replying:
- #       reply, chat_id, turn_id, candidate_id = await chat_with_character(AI_TOKEN, CHARACTER_ID, user_message, HISTORY_THREAD_ID)
-  #      if reply:
-   #         # Create a TTS button after the reply
-    #        tts_button = TTSButton(chat_id, turn_id, candidate_id)
-     #       view = View(timeout=None)  # Disable timeout so the button stays active
-      #      view.add_item(tts_button)
-       #     await message.channel.send(reply, view=view)
+        
+    if unexpected_replying > 0 and random.randint(1, 100) <= unexpected_replying:
+        #reply, chat_id, turn_id, candidate_id = await chat_with_character(AI_TOKEN, CHARACTER_ID, user_message, HISTORY_THREAD_ID)
+        reply, chat_id, turn_id, candidate_id = await client.chat.send_message(character_id, chat.chat_id, user_message, history_thread_id)
+        if reply:
+            # Create a TTS button after the reply
+            tts_button = TTSButton(chat_id, turn_id, candidate_id)
+            view = View(timeout=None)  # Disable timeout so the button stays active
+            view.add_item(tts_button)
+            await message.channel.send(reply, view=view)
+        else:
+            await message.channel.send("``- could not get response -``")
+    
+    if message.reference and message.reference.resolved.author == bot.user:
+        user_message = message.content
+        #reply, chat_id, turn_id, candidate_id = await chat_with_character(AI_TOKEN, CHARACTER_ID, user_message, HISTORY_THREAD_ID)
+        reply, chat_id, turn_id, candidate_id = await client.chat.send_message(character_id, chat.chat_id, user_message, history_thread_id)
+        if reply:
+            # Create a TTS button after the reply
+            tts_button = TTSButton(chat_id, turn_id, candidate_id)
+            view = View(timeout=None)  # Disable timeout so the button stays active
+            view.add_item(tts_button)
+            await message.channel.send(reply, view=view)
+        else:
+            await message.channel.send("``- could not get response -``")
+            
+    elif bot.user.mentioned_in(message):
+        user_message = message.content
+        #reply, chat_id, turn_id, candidate_id = await chat_with_character(AI_TOKEN, CHARACTER_ID, user_message, HISTORY_THREAD_ID)
+        reply, chat_id, turn_id, candidate_id = await client.chat.send_message(character_id, chat.chat_id, user_message, history_thread_id)
+        if reply:
+            # Create a TTS button after the reply
+            tts_button = TTSButton(chat_id, turn_id, candidate_id)
+            view = View(timeout=None)  # Disable timeout so the button stays active
+            view.add_item(tts_button)
+            await message.channel.send(reply, view=view)
+        else:
+            await message.channel.send("``- could not get response -``")
             
     if message.content.startswith("!chat"):
         user_message = message.content[len("!chat "):]
         if user_message:
-            reply, chat_id, turn_id, candidate_id = await chat_with_character(AI_TOKEN, CHARACTER_ID, user_message, HISTORY_THREAD_ID)
+            #reply, chat_id, turn_id, candidate_id = await chat_with_character(AI_TOKEN, CHARACTER_ID, user_message, HISTORY_THREAD_ID)
+            reply, chat_id, turn_id, candidate_id = await client.chat.send_message(character_id, chat.chat_id, user_message, history_thread_id)
+
             if reply:
                 # Create a TTS button after the reply
                 tts_button = TTSButton(chat_id, turn_id, candidate_id)
@@ -331,6 +365,7 @@ async def on_message(message):
                 await message.channel.send("``- could not generate image -``")
         else:
             await message.channel.send("Please provide a prompt after ``!image``")
+
 if args.clear:
     clear_screen()
 # Run the bot
