@@ -125,31 +125,6 @@ def get_input_with_timeout(prompt, timeout):
     except TimeoutException:
         return None
         
-@bot.command(name="chat")
-async def chat_command(ctx, *, message: str):
-    try:
-        # Sending the user message to the character and handling the response
-        await send_character_message(message)
-    except Exception as e:
-        # Handle potential errors during the interaction
-        await ctx.send(f"An error occurred while processing your message: {e}")
-
-@bot.command(name="image")
-async def image_command(ctx, *, prompt: str):
-    current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
-    try:
-        urls = await client.utils.ge
-        nerate_image(prompt)
-        if not urls:
-            await ctx.send(f"{grey}{current_time}{red} ERRO {reset} <-> No images generated.")
-            return
-        for url in urls:
-            embed = discord.Embed(title=f"{grey}{current_time}{red} INFO {reset} --> Image result for: {prompt}")
-            embed.set_image(url=url)
-            await ctx.send(embed=embed)
-    except Exception as e:
-        await ctx.send(f"{grey}{current_time}{red} ERRO {reset} <-> Failed to generate image: {e}")
-        
 @bot.command(name="commands")
 async def help_command(ctx):
     help_text = (
@@ -285,53 +260,73 @@ async def on_ready():
 # Update on_message to use the dynamic voice_id
 @bot.event
 async def on_message(message):
-    global voice_id  # Ensure this refers to the global voice_id
+    client = await get_client(token=http_auth)  # Use AI_TOKEN instead of token
     if message.author == bot.user:
         return
+        
+    if unexpected_replying > 0 and random.randint(1, 100) <= unexpected_replying:
+        # Handle unexpected replies
+        user_message = message.content
+#        reply, chat_id, turn_id, candidate_id = await client.chat.send_message(cai_urlid, thread_id, user_message)
+        reply, chat_id, turn_id, candidate_id = await client.chat.send_message(cai_urlid, chat.chat_id, user_message)
 
-    # Process commands
-    await bot.process_commands(message)
-
-    # Strip the bot mention from the message content
-    content = message.clean_content.replace(f"@{bot.user.name}", "").strip()
-
-    # Ensure voice_id is defined (should already be set during on_ready)
-    if not voice_id:
-        print_error("Voice ID is not set.")
-        return
-
-    # Send the message if the bot is mentioned and content exists
-    if bot.user.mentioned_in(message) and content:
-        await send_character_message(message, content, voice_id)
-        return
-
-    # Randomly respond based on unexpected_replying chance
-    if unexpected_replying > 0 and random.randint(1, 100) <= unexpected_replying and content:
-        await send_character_message(message, content, voice_id)
-
-@bot.event
-async def on_message(message):
-    if message.author == bot.user:
-        return
-
-    # Process commands
-    await bot.process_commands(message)
-
-    # Strip the bot mention from the message content
-    content = message.clean_content.replace(f"@{bot.user.name}", "").strip()
-
-    # Ensure voice_id is defined (this could be a static value or something dynamic)
-    voice_id = "default_voice_id"  # Replace with actual logic to fetch the voice ID
-
-    # Send the message if the bot is mentioned and content exists
-    if bot.user.mentioned_in(message) and content:
-        await send_character_message(message)
-        return
-
-    # Randomly respond based on unexpected_replying chance
-    if unexpected_replying > 0 and random.randint(1, 100) <= unexpected_replying and content:
-        await send_character_message(message, content, voice_id)
-
+        if reply:
+            # Create a TTS button after the reply
+            tts_button = TTSButton(chat_id, turn_id, candidate_id)
+            view = View(timeout=None)  # Disable timeout so the button stays active
+            view.add_item(tts_button)
+            await message.channel.send(reply, view=view)
+        else:
+            await message.channel.send("``- could not get response -``")
+    
+    # Handle replies to the bot's messages
+    if message.reference and message.reference.resolved.author == bot.user:
+        user_message = message.content
+        reply, chat_id, turn_id, candidate_id = await client.chat.send_message(cai_urlid, chat.chat_id, user_message)
+        if reply:
+            tts_button = TTSButton(chat_id, turn_id, candidate_id)
+            view = View(timeout=None)
+            view.add_item(tts_button)
+            await message.channel.send(reply, view=view)
+        else:
+            await message.channel.send("``- could not get response -``")
+            
+    elif bot.user.mentioned_in(message):
+        user_message = message.content
+        reply, chat_id, turn_id, candidate_id = await client.chat.send_message(cai_urlid, chat.chat_id, user_message)
+        if reply:
+            tts_button = TTSButton(chat_id, turn_id, candidate_id)
+            view = View(timeout=None)
+            view.add_item(tts_button)
+            await message.channel.send(reply, view=view)
+        else:
+            await message.channel.send("``- could not get response -``")
+            
+    if message.content.startswith("!chat"):
+        user_message = message.content[len("!chat "):]
+        if user_message:
+            reply, chat_id, turn_id, candidate_id = await client.chat.send_message(cai_urlid, chat.chat_id, user_message)
+            if reply:
+                tts_button = TTSButton(chat_id, turn_id, candidate_id)
+                view = View(timeout=None)
+                view.add_item(tts_button)
+                await message.channel.send(reply, view=view)
+            else:
+                await message.channel.send("``- could not get response -``")
+        else:
+            await message.channel.send("Please provide a message after ``!chat``")
+    
+    elif message.content.startswith("!image"):
+        prompt = message.content[len("!image "):]
+        if prompt:
+            image_url = await generate_image_from_prompt(prompt)
+            if image_url:
+                await message.channel.send(f"{image_url}")
+            else:
+                await message.channel.send("``- could not generate image -``")
+        else:
+            await message.channel.send("Please provide a prompt after ``!image``")
+            
 async def send_character_message(message):
     try:
         answer = await client.chat.send_message(http_auth, cai_urlid, message)
@@ -364,7 +359,6 @@ async def main():
     print(f"[{greeting_message.author_name}]: {greeting_message.get_primary_candidate().text}")
     try:
         while True:
-            # NOTE: input() is blocking function!
             message = input(f"[{me.name}]: ")
             answer = await client.chat.send_message(character_id, chat.chat_id, message, streaming=True)
             printed_length = 0
@@ -378,9 +372,6 @@ async def main():
     except SessionClosedError:
         print("session closed. Bye!")
     finally:
-        # Don't forget to explicitly close the session
         await client.close_session()
-
-asyncio.run(main())
 
 bot.run(bot_token)
