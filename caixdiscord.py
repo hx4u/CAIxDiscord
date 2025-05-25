@@ -268,7 +268,10 @@ async def on_message(message):
         # Handle unexpected replies
         user_message = message.content
 #        reply, chat_id, turn_id, candidate_id = await client.chat.send_message(cai_urlid, thread_id, user_message)
-        reply, chat_id, turn_id, candidate_id = await client.chat.send_message(cai_urlid, chat.chat_id, user_message)
+        reply = await client.chat.send_message(cai_urlid, chat.chat_id, user_message)
+        chat_id = reply.chat_id
+        turn_id = reply.turn_id
+        candidate_id = reply.candidates
 
         if reply:
             # Create a TTS button after the reply
@@ -282,7 +285,10 @@ async def on_message(message):
     # Handle replies to the bot's messages
     if message.reference and message.reference.resolved.author == bot.user:
         user_message = message.content
-        reply, chat_id, turn_id, candidate_id = await client.chat.send_message(cai_urlid, chat.chat_id, user_message)
+        reply = await client.chat.send_message(cai_urlid, chat.chat_id, user_message)
+        chat_id = reply.chat_id
+        turn_id = reply.turn_id
+        candidate_id = reply.candidates
         if reply:
             tts_button = TTSButton(chat_id, turn_id, candidate_id)
             view = View(timeout=None)
@@ -293,7 +299,10 @@ async def on_message(message):
             
     elif bot.user.mentioned_in(message):
         user_message = message.content
-        reply, chat_id, turn_id, candidate_id = await client.chat.send_message(cai_urlid, chat.chat_id, user_message)
+        reply = await client.chat.send_message(cai_urlid, chat.chat_id, user_message)
+        chat_id = reply.chat_id
+        turn_id = reply.turn_id
+        candidate_id = reply.candidates
         if reply:
             tts_button = TTSButton(chat_id, turn_id, candidate_id)
             view = View(timeout=None)
@@ -305,7 +314,10 @@ async def on_message(message):
     if message.content.startswith("!chat"):
         user_message = message.content[len("!chat "):]
         if user_message:
-            reply, chat_id, turn_id, candidate_id = await client.chat.send_message(cai_urlid, chat.chat_id, user_message)
+            reply = await client.chat.send_message(cai_urlid, chat.chat_id, user_message)
+            chat_id = reply.chat_id
+            turn_id = reply.turn_id
+            candidate_id = reply.candidates
             if reply:
                 tts_button = TTSButton(chat_id, turn_id, candidate_id)
                 view = View(timeout=None)
