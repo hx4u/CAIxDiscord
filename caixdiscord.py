@@ -1,18 +1,15 @@
 def display_help():
     help_text = (
-        "                                                                                                  \n"
-        "    .aMMMb  .aMMMb  dMP                    _____                                                  \n"
-        "   dMP VMP dMP dMP amr  ooooooo  ooooo  __|__   |__  __  ______  ______  _____  _____      _      \n"   
-        "  dMP     dMMMMMP dMP    `8888    d8'  |     |     ||__||   ___||   ___||  _  ||   __| _ _| |     \n"   
-        " dMP.aMP dMP dMP dMP       Y888..8P    |      |    ||  | `-.`-. |   |__ | |_| ||  |   | |_| |     \n"  
-        " VMMMP* dMP dMP dMP         `8888'     |______|  __||__||______||______||_____||__|   |___|_|     \n"
-        "                           .8PY888.       |_____|                                                 \n"
-        "   Character X            d8'  `888b                                                              \n"
-        "           Ai Discord   o888o  o88888o    A Character AI to Discord api with TTS integration.     \n"
-        "                                                                                                  \n"
-        "                                          Credits: LiteKira (kil_l_y) @hx4u - Version 1.0         \n"
-        " Usage: python caixdiscord.py [options]                                                           \n"
-        "                                                                                                  \m"
+        "    .aMMMb  .aMMMb  dMP                    _____                                              \n"
+        "   dMP VMP dMP dMP amr  ooooooo  ooooo  __|__   |__  __  ______  ______  _____  _____   _     \n"   
+        "  dMP     dMMMMMP dMP    `8888    d8'  |     |     ||__||   ___||   ___||  _  ||   __| | |    \n"   
+        " dMP.aMP dMP dMP dMP       Y888..8P    |      |    ||  | `-.`-. |   |__ | |_| ||  | __ | |    \n"  
+        " VMMMP* dMP dMP dMP         `8888'     |______|  __||__||______||______||_____||__||_____|    \n"
+        "                           .8PY888.       |_____|                                             \n"
+        "   Character X            d8'  `888b                                                          \n"
+        "           Ai Discord   o888o  o88888o    A Character AI to Discord api with TTS integration. \n"
+        "                                                                                              \n"
+        "                                          Credits: LiteKira (kil_l_y) @hx4u - Version 1.0     \n"
         )
     print(help_text)
 import discord
@@ -51,7 +48,7 @@ async def on_ready():
     await tree.sync()
 @tree.command(name="help", description="Show commands")
 async def help_command(interaction: discord.Interaction):
-    await interaction.response.send_message("Commands: !chat [message], !image [prompt]")
+    await interaction.response.send_message("Commands: /chat [message], /image [prompt]")
 @tree.command(name="chat", description="Chat with AI")
 async def chat_command(interaction: discord.Interaction, message: str):
     await interaction.response.defer()
@@ -82,7 +79,7 @@ async def send_message_with_tts(channel, answer):
         button.disabled = True
         await interaction.response.edit_message(view=view)
         voice_data = await generate_tts(cai, view.answer)
-        await interaction.followup.send(file=discord.File(voice_data, filename="voice.mp3"))
+        await interaction.followup.send(file=discord.File(voice_data, filename="TTS.mp3"))
     button.callback = button_callback
     view.add_item(button)
     await channel.send(content=reply_text, view=view)
