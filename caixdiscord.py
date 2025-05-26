@@ -15,7 +15,7 @@ def display_help():
         "                                                                                                  \m"
         )
     print(help_text)
-    import discord
+import discord
 import json
 import asyncio
 import argparse
