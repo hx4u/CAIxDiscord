@@ -20,6 +20,7 @@ from discord.ui import Button, View
 from utils.cai import CAIWrapper
 from utils.voice import select_voice
 from utils.tts import generate_tts
+import random
 with open("config.json") as f:
     config = json.load(f)
 parser = argparse.ArgumentParser()
