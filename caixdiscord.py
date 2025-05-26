@@ -47,6 +47,7 @@ async def on_ready():
     print(f"Logged in as {bot.user}")
     cai = await CAIWrapper.create(config["HTTP_AUTHORIZATION"], config["CHARACTER_INURL_ID"], config["HISTORIES_INURL_ID"])
     await select_voice(cai, VOICE_NAME)
+    print("API is now loaded. User may now interact in Discord.")
     await tree.sync()
 @tree.command(name="help", description="Show commands")
 async def help_command(interaction: discord.Interaction):
