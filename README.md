@@ -1,7 +1,3 @@
-
-update log 2025-05-21 7:10PM bstill roke, ITS NOT MY CODE (PyCharacter is bad) help?
-
-update log 2025-05-21 11:20AM broke, fixing now. pls chek in a few hours
 # CAIxDiscord
 # Discord Character AI Bot
 
@@ -47,15 +43,6 @@ python3 caixdiscord.py --timeout 1
 ```
 ### Commands for in Discord:
 - Initiate a command with "!".
-- Use "!help" to display general command help.
-- Use "!help command" to display help for specific commands.
-  
-- Use "!commands" to show this:
-```
-Available Commands:
-!chat [message] — Chat with the character.
-@Name [message] — Mention the bot to chat.
-!image [prompt] — Generate some images.
-!commands — Show this help message.
-Click 🔊  under bot message to generate speech.
-```
+- Use "/help" to display general command help.
+- Use "/chat" to start a chat with your AI.
+- Use "/image" to generate some images.
