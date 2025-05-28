@@ -1,9 +1,9 @@
 {
-    "_comment": "Read the README.md file to know where to get the data."
+    "_comment": "Read the README.md file to know where to get the data.",
     "BOTS_DISCORD_TOKEN": "BOTS_DISCORD_TOKEN",
     "HTTP_AUTHORIZATION": "HTTP_AUTHORIZATION",
     "CHARACTER_INURL_ID": "CHARACTER_INURL_ID",
-    "HISTORIES_INURL_ID": "HISTORIES_INURL_ID"
+    "HISTORIES_INURL_ID": "HISTORIES_INURL_ID",
     "AIS_NAME_FOR_VOICE": "AIS_NAME_FOR_VOICE"
 }
 
