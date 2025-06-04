@@ -1,2 +1,3 @@
 discord.py
 curl_cffi
+PyCharacterAI
